@@ -45,12 +45,15 @@ int nshingle = 8;
 int nfeature = 64;
 /* were the defaults changed? */
 int pset = 0;
+/* do a debugging trace? */
+int debug_trace = 0;
 
 static struct option long_options[] = {
     {"write-hashfile", 0, 0, 'w'},
     {"compare-hashfile", 0, 0, 'c'},
     {"shingle-size", 1, 0, 's'},
     {"feature-set-size", 1, 0, 'f'},
+    {"debug-trace", 1, 0, 'd'},
     {0,0,0,0}
 };
 
@@ -64,10 +67,17 @@ static struct option long_options[] = {
    top-of-heap, then insert crc.  don't worry
    about sign bits---doesn't matter here. */
 static void crc_insert(int crc) {
-    if(nheap == nfeature && heap[0] <= (unsigned)crc)
+    if (debug_trace)
+	fprintf(stderr, ">got %x\n", (unsigned)crc);
+    if(nheap == nfeature && (unsigned)crc >= heap[0])
 	return;
-    if(nheap == nfeature)
-	(void)heap_extract_max();
+    if(nheap == nfeature) {
+	unsigned m = heap_extract_max();
+	if (debug_trace)
+	    fprintf(stderr, ">pop %x\n", m);
+    }
+    if (debug_trace)
+	fprintf(stderr, ">push\n");
     heap_insert((unsigned)crc);
 }
 
@@ -210,27 +220,36 @@ static int read_hashfile(char *name, hashinfo **hi) {
 
 hashinfo *hi1, *hi2;
 
+/* walk backward until one set runs out, counting the
+   number of elements in the union of the sets.  the
+   backward walk is necessary because the common subsets
+   are at the end of the file by construction.  bleah.
+   should probably reformat so that it's the other way
+   around, which would mean that one could shorten a
+   shingleprint by truncation. */
 static double score(void) {
     double unionsize;
     double intersectsize;
-    int i1 = 0;
-    int i2 = 0;
+    int i1 = hi1->nfeature - 1;
+    int i2 = hi2->nfeature - 1;
     int count = 0;
     int matchcount = 0;
-    while(i1 < hi1->nfeature && i2 < hi2->nfeature) {
+    while(i1 > 0 && i2 > 0) {
 	if ((unsigned)(hi1->feature[i1]) < (unsigned)(hi2->feature[i2])) {
-	    i2++;
+	    --i1;
 	    continue;
 	}
 	if((unsigned)(hi1->feature[i1]) > (unsigned)(hi2->feature[i2])) {
-	    i1++;
+	    --i2;
 	    continue;
 	}
 	matchcount++;
-	i1++;
-	i2++;
+	--i1;
+	--i2;
     }
-    count = i1 > i2 ? i1 : i2;
+    count = hi1->nfeature;
+    if (count > hi2->nfeature)
+	count = hi2->nfeature;
     intersectsize = matchcount;
     unionsize = 2 * count - matchcount;
     return intersectsize / unionsize;
@@ -248,7 +267,7 @@ static void compare_hashes(char *name1, char *name2) {
     if (hi1->nfeature != hi2->nfeature)
 	fprintf(stderr, "warning: feature set size mismatch %d %d\n",
 		hi1->nfeature, hi2->nfeature);
-    printf("%g\n", score());
+    printf("%4.2f\n", score());
 }
 
 
@@ -265,7 +284,7 @@ int main(int argc, char **argv) {
     FILE *fin = stdin;
     /* parse initial arguments */
     while(1) {
-	switch(getopt_long(argc, argv, "wcs:f:",
+	switch(getopt_long(argc, argv, "wcs:f:d",
 			   long_options, 0)) {
 	case 'w':
 	    mode = 'w';
@@ -289,6 +308,8 @@ int main(int argc, char **argv) {
 	    }
 	    pset = 1;
 	    continue;
+	case 'd':
+	    debug_trace = 1;
 	}
 	break;
     }
