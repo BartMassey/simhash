@@ -34,6 +34,7 @@
 #include <assert.h>
 #include "crc.h"
 #include "heap.h"
+#include "hash.h"
 
 #include <unistd.h>
 #define _GNU_SOURCE
@@ -66,19 +67,26 @@ static struct option long_options[] = {
 /* if crc is less than top of heap, extract
    top-of-heap, then insert crc.  don't worry
    about sign bits---doesn't matter here. */
-static void crc_insert(int crc) {
+static void crc_insert(unsigned crc) {
     if (debug_trace)
-	fprintf(stderr, ">got %x\n", (unsigned)crc);
-    if(nheap == nfeature && (unsigned)crc >= heap[0])
+	fprintf(stderr, ">got %x\n", crc);
+    if(nheap == nfeature && crc >= heap[0])
 	return;
+    if (hash_contains(crc)) {
+	if (debug_trace)
+	    fprintf(stderr, ">dup\n");
+	return;
+    }
     if(nheap == nfeature) {
 	unsigned m = heap_extract_max();
+	assert(hash_delete(m));
 	if (debug_trace)
 	    fprintf(stderr, ">pop %x\n", m);
     }
     if (debug_trace)
 	fprintf(stderr, ">push\n");
-    heap_insert((unsigned)crc);
+    hash_insert(crc);
+    heap_insert(crc);
 }
 
 
@@ -101,7 +109,7 @@ static int running_crc(FILE *f) {
     i = 0;
     while(1) {
 	int ch;
-	crc_insert(hash_crc32(buf, i, nshingle));
+	crc_insert((unsigned)hash_crc32(buf, i, nshingle));
 	ch = fgetc(f);
 	if (ch == EOF)
 	    return 1;
@@ -137,6 +145,7 @@ void write_hashes(int argc, char **argv) {
 	    exit(1);
 	}
 	heap_reset(nfeature);
+	hash_reset(nfeature);
 	running_crc(f);
 	fclose(f);
 	strncpy(nambuf, argv[i],
@@ -326,6 +335,7 @@ int main(int argc, char **argv) {
 	    /* fall through */
 	case 0:
 	    heap_reset(nfeature);
+	    hash_reset(nfeature);
 	    running_crc(fin);
 	    write_hash(stdout);
 	    return 0;
