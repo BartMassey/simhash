@@ -7,7 +7,7 @@
 #include <stdlib.h>
 #include "heap.h"
 
-int *heap = 0;
+unsigned *heap = 0;
 int nheap = 0;
 static int maxheap = 0;
 
@@ -55,8 +55,8 @@ static void downheap(void) {
     }
 }
 
-int heap_extract_max(void) {
-    int m;
+unsigned heap_extract_max(void) {
+    unsigned m;
     assert(nheap > 0);
     /* lift the last heap element to the top,
        replacing the current top element */
@@ -85,7 +85,7 @@ static void upheap(void) {
     }
 }
 
-void heap_insert(int v) {
+void heap_insert(unsigned v) {
     assert(nheap < maxheap);
     heap[nheap++] = v;
     upheap();

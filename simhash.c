@@ -64,11 +64,11 @@ static struct option long_options[] = {
    top-of-heap, then insert crc.  don't worry
    about sign bits---doesn't matter here. */
 static void crc_insert(int crc) {
-    if(nheap == nfeature && heap[0] <= crc)
+    if(nheap == nfeature && heap[0] <= (unsigned)crc)
 	return;
     if(nheap == nfeature)
 	(void)heap_extract_max();
-    heap_insert(crc);
+    heap_insert((unsigned)crc);
 }
 
 
@@ -109,8 +109,8 @@ static void write_hash(FILE *f) {
     s = htons(nshingle);
     fwrite(&s, sizeof(short), 1, f);
     while(nheap > 0) {
-	int hv = htonl(heap_extract_max());
-	fwrite(&hv, sizeof(int), 1, f);
+	unsigned hv = htonl(heap_extract_max());
+	fwrite(&hv, sizeof(unsigned), 1, f);
     }
 }
 
@@ -218,12 +218,11 @@ static double score(void) {
     int count = 0;
     int matchcount = 0;
     while(i1 < hi1->nfeature && i2 < hi2->nfeature) {
-	count++;
-	if (hi1->feature[i1] < hi2->feature[i2]) {
+	if ((unsigned)(hi1->feature[i1]) < (unsigned)(hi2->feature[i2])) {
 	    i2++;
 	    continue;
 	}
-	if(hi1->feature[i1] > hi2->feature[i2]) {
+	if((unsigned)(hi1->feature[i1]) > (unsigned)(hi2->feature[i2])) {
 	    i1++;
 	    continue;
 	}
@@ -231,6 +230,7 @@ static double score(void) {
 	i1++;
 	i2++;
     }
+    count = i1 > i2 ? i1 : i2;
     intersectsize = matchcount;
     unionsize = 2 * count - matchcount;
     return intersectsize / unionsize;
