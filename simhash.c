@@ -33,6 +33,8 @@
 #include <string.h>
 #include <stdio.h>
 #include <assert.h>
+#include "crc.h"
+#include "heap.h"
 
 /* HASH FILE VERSION */
 #define FILE_VERSION 0xcb01
@@ -46,90 +48,6 @@
 /* size of a shingle in bytes.  should be
    at least 4 to make CRC32 work */
 #define NSHINGLE 8
-
-extern int hash_crc32(char *buf, int i0, int nbuf);
-
-/* heap max priority queue.  should probably be in a separate file */
-
-static int heap[NFEATURES];
-int nheap = 0;
-
-static void heap_reset(void) {
-    nheap = 0;
-}
-
-/* push the top of heap down as needed to
-   restore the heap property */
-static void downheap(void) {
-    int tmp;
-    int i = 0;
-    while(1) {
-	int left =  (i << 1) + 1;
-	int right = left + 1;
-	if (left >= nheap)
-	    return;
-	if (right >= nheap) {
-	    if (heap[i] < heap[left]) {
-		tmp = heap[left];
-		heap[left] = heap[i];
-		heap[i] = tmp;
-	    }
-	    return;
-	}
-	if (heap[i] >= heap[left] &&
-	    heap[i] >= heap[right])
-	    return;
-	if (heap[left] > heap[right]) {
-	    tmp = heap[left];
-	    heap[left] = heap[i];
-	    heap[i] = tmp;
-	    i = left;
-	} else {
-	    tmp = heap[right];
-	    heap[right] = heap[i];
-	    heap[i] = tmp;
-	    i = right;
-	}
-    }
-}
-
-static int heap_extract_max(void) {
-    int m;
-    assert(nheap > 0);
-    /* lift the last heap element to the top,
-       replacing the current top element */
-    m = heap[0];
-    heap[0] = heap[--nheap];
-    /* now restore the heap property */
-    downheap();
-    /* and return the former top */
-    return m;
-}
-
-/* lift the last value on the heap up
-   as needed to restore the heap property */
-static void upheap(void) {
-    int i = nheap - 1;
-    assert(nheap > 0);
-    while(i > 0) {
-	int tmp;
-	int parent = (i - 1) >> 1;
-	if (heap[parent] >= heap[i])
-	    return;
-	tmp = heap[parent];
-	heap[parent] = heap[i];
-	heap[i] = tmp;
-	i = parent;
-    }
-}
-
-static void heap_insert(int v) {
-    assert(nheap < NFEATURES);
-    heap[nheap++] = v;
-    upheap();
-}
-
-/* end heap code */
 
 /* if crc is less than top of heap, extract
    top-of-heap, then insert crc.  don't worry
@@ -192,7 +110,7 @@ void write_hashes(int argc, char **argv) {
 	    perror(argv[i]);
 	    exit(1);
 	}
-	heap_reset();
+	heap_reset(NFEATURES);
 	running_crc(f);
 	fclose(f);
 	strncpy(nambuf, argv[i],
@@ -321,7 +239,7 @@ void usage(void) {
 
 int main(int argc, char **argv) {
     if (argc == 1) {
-	heap_reset();
+	heap_reset(NFEATURES);
 	running_crc(stdin);
 	write_hash(stdout);
 	return 0;
@@ -340,7 +258,7 @@ int main(int argc, char **argv) {
 	    perror(argv[1]);
 	    exit(1);
 	}
-	heap_reset();
+	heap_reset(NFEATURES);
 	running_crc(f);
 	fclose(f);
 	write_hash(stdout);
