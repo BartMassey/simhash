@@ -39,9 +39,18 @@
 #define _GNU_SOURCE
 #include <getopt.h>
 
+/* size of a shingle in bytes.  should be
+   at least 4 to make CRC work */
+int nshingle = 8;
+int nfeature = 64;
+/* were the defaults changed? */
+int pset = 0;
+
 static struct option long_options[] = {
     {"write-hashfile", 0, 0, 'w'},
     {"compare-hashfile", 0, 0, 'c'},
+    {"shingle-size", 1, 0, 's'},
+    {"feature-set-size", 1, 0, 'f'},
     {0,0,0,0}
 };
 
@@ -51,31 +60,29 @@ static struct option long_options[] = {
 /* SUFFIX for hash outputs */
 #define SUFFIX ".sim"
 
-/* NFEATURES should be a power of 2 */
-#define NFEATURES 64
-
-/* size of a shingle in bytes.  should be
-   at least 4 to make CRC32 work */
-#define NSHINGLE 8
-
 /* if crc is less than top of heap, extract
    top-of-heap, then insert crc.  don't worry
    about sign bits---doesn't matter here. */
 static void crc_insert(int crc) {
-    if(nheap == NFEATURES && heap[0] <= crc)
+    if(nheap == nfeature && heap[0] <= crc)
 	return;
-    if(nheap == NFEATURES)
+    if(nheap == nfeature)
 	(void)heap_extract_max();
     heap_insert(crc);
 }
 
 
+char *buf = 0;
+
 /* return true if the file had at least enough bytes
    for a single shingle. */
 static int running_crc(FILE *f) {
-    char buf[NSHINGLE];
     int i;
-    for (i = 0; i < NSHINGLE; i++) {
+    if (buf == 0) {
+	buf = malloc(nshingle);
+	assert(buf);
+    }
+    for (i = 0; i < nshingle; i++) {
 	int ch = fgetc(f);
 	if (ch == EOF)
 	    return 0;
@@ -84,12 +91,12 @@ static int running_crc(FILE *f) {
     i = 0;
     while(1) {
 	int ch;
-	crc_insert(hash_crc32(buf, i, NSHINGLE));
+	crc_insert(hash_crc32(buf, i, nshingle));
 	ch = fgetc(f);
 	if (ch == EOF)
 	    return 1;
 	buf[i] = ch;
-	i = (i + 1) % NSHINGLE;
+	i = (i + 1) % nshingle;
     }
     assert(0);
     /*NOTREACHED*/
@@ -99,7 +106,7 @@ static int running_crc(FILE *f) {
 static void write_hash(FILE *f) {
     short s = htons(FILE_VERSION);  /* file/CRC version */
     fwrite(&s, sizeof(short), 1, f);
-    s = htons(NSHINGLE);
+    s = htons(nshingle);
     fwrite(&s, sizeof(short), 1, f);
     while(nheap > 0) {
 	int hv = htonl(heap_extract_max());
@@ -112,14 +119,14 @@ static char nambuf[MAXPATHLEN];
 
 void write_hashes(int argc, char **argv) {
     int i;
-    for(i = 2; i < argc; i++) {
+    for(i = 0; i < argc; i++) {
 	FILE *f = fopen(argv[i], "r");
 	FILE *of;
 	if (!f) {
 	    perror(argv[i]);
 	    exit(1);
 	}
-	heap_reset(NFEATURES);
+	heap_reset(nfeature);
 	running_crc(f);
 	fclose(f);
 	strncpy(nambuf, argv[i],
@@ -139,7 +146,8 @@ void write_hashes(int argc, char **argv) {
 typedef struct hashinfo {
     unsigned short version;
     unsigned short nshingle;
-    unsigned int nfeatures;
+    unsigned int nfeature;
+    int *feature;
 } hashinfo;
     
 
@@ -147,18 +155,22 @@ typedef struct hashinfo {
    a pointer to info.  The info pointer is static data,
    the results are overwritten on each call.  A null pointer
    is returned on error. */
-static hashinfo *read_hash(FILE *f, int *features, int nfeatures) {
-    static hashinfo h;
+static hashinfo *read_hash(FILE *f) {
+    hashinfo *h = malloc(sizeof(hashinfo));
     short s;
     int i;
+    assert(h);
     fread(&s, sizeof(short), 1, f);
-    h.version = ntohs(s);
-    if (h.version != FILE_VERSION) {
+    h->version = ntohs(s);
+    if (h->version != FILE_VERSION) {
 	fprintf(stderr, "bad file version\n");
 	return 0;
     }
     fread(&s, sizeof(short), 1, f);
-    h.nshingle = ntohs(s);
+    h->nshingle = ntohs(s);
+    h->nfeature = 16;
+    h->feature = malloc(h->nfeature * sizeof(int));
+    assert(h->feature);
     i = 0;
     while(1) {
 	int fe;
@@ -168,49 +180,50 @@ static hashinfo *read_hash(FILE *f, int *features, int nfeatures) {
 		perror("fread");
 		return 0;
 	    }
-	    h.nfeatures = i;
-	    return &h;
+	    h->nfeature = i;
+	    h->feature = realloc(h->feature, h->nfeature * sizeof(int));
+	    assert(h->feature);
+	    return h;
 	}
-	if (i >= nfeatures) {
-	    fprintf(stderr, "too many features\n");
-	    return 0;
+	if (i >= h->nfeature) {
+	    h->nfeature *= 2;
+	    h->feature = realloc(h->feature, h->nfeature * sizeof(int));
+	    assert(h->feature);
 	}
-	features[i++] = ntohl(fe);
+	h->feature[i++] = ntohl(fe);
     }
     abort();
     /*NOTREACHED*/
 }
 
 
-static int read_hashfile(char *name, hashinfo *hi, int *h, int nh) {
-    hashinfo *tmp;
+static int read_hashfile(char *name, hashinfo **hi) {
     FILE *f = fopen(name, "r");
     if (!f) {
 	perror(name);
 	exit(1);
     }
-    tmp = read_hash(f, h, nh);
+    *hi = read_hash(f);
     fclose(f);
-    if (!tmp)
-	return 0;
-    *hi = *tmp;
-    return 1;
+    return !!hi;
 }
 
-hashinfo hi1, hi2;
-int hash1[NFEATURES], hash2[NFEATURES];
+hashinfo *hi1, *hi2;
 
 static double score(void) {
     double unionsize;
+    double intersectsize;
     int i1 = 0;
     int i2 = 0;
+    int count = 0;
     int matchcount = 0;
-    while(i1 < hi1.nfeatures && i2 < hi2.nfeatures) {
-	if (hash1[i1] < hash2[i2]) {
+    while(i1 < hi1->nfeature && i2 < hi2->nfeature) {
+	count++;
+	if (hi1->feature[i1] < hi2->feature[i2]) {
 	    i2++;
 	    continue;
 	}
-	if(hash1[i1] > hash2[i2]) {
+	if(hi1->feature[i1] > hi2->feature[i2]) {
 	    i1++;
 	    continue;
 	}
@@ -218,66 +231,98 @@ static double score(void) {
 	i1++;
 	i2++;
     }
-    unionsize = hi1.nfeatures + hi2.nfeatures - matchcount;
-    return matchcount / unionsize;
+    intersectsize = matchcount;
+    unionsize = 2 * count - matchcount;
+    return intersectsize / unionsize;
 }
 
 static void compare_hashes(char *name1, char *name2) {
-    if (!read_hashfile(name1, &hi1, hash1, NFEATURES))
+    if (!read_hashfile(name1, &hi1))
 	exit(1);
-    if (!read_hashfile(name2, &hi2, hash2, NFEATURES))
+    if (!read_hashfile(name2, &hi2))
 	exit(1);
-    if (hi1.nshingle != hi2.nshingle) {
+    if (hi1->nshingle != hi2->nshingle) {
 	fprintf(stderr, "shingle size mismatch\n");
 	exit(1);
     }
-    if (hi1.nfeatures != NFEATURES ||
-	hi2.nfeatures != NFEATURES)
-	fprintf(stderr, "warning: unexpected feature count\n");
+    if (hi1->nfeature != hi2->nfeature)
+	fprintf(stderr, "warning: feature set size mismatch %d %d\n",
+		hi1->nfeature, hi2->nfeature);
     printf("%g\n", score());
 }
 
 
 void usage(void) {
     fprintf(stderr, "simhash: usage:\n"
-	    "\tsimhash [file]\n"
-	    "\tsimhash -w [file] ...\n"
+	    "\tsimhash [-s nshingles] [-f nfeatures] [file]\n"
+	    "\tsimhash [-s nshingles] [-f nfeatures] -w [file] ...\n"
 	    "\tsimhash -c hashfile hashfile\n");
     exit(1);
 }
 
 int main(int argc, char **argv) {
-    if (argc == 1) {
-	heap_reset(NFEATURES);
-	running_crc(stdin);
-	write_hash(stdout);
-	return 0;
+    char mode = '?';
+    FILE *fin = stdin;
+    /* parse initial arguments */
+    while(1) {
+	switch(getopt_long(argc, argv, "wcs:f:",
+			   long_options, 0)) {
+	case 'w':
+	    mode = 'w';
+	    continue;
+	case 'c':
+	    mode = 'c';
+	    continue;
+	case 's':
+	    nshingle = atoi(optarg);
+	    if (nshingle < 4) {
+		fprintf(stderr, "simhash: shingle size must be at least 4\n");
+		exit(1);
+	    }
+	    pset = 1;
+	    continue;
+	case 'f':
+	    nfeature = atoi(optarg);
+	    if (nfeature < 1) {
+		fprintf(stderr, "simhash: feature set size must be at least 1\n");
+		exit(1);
+	    }
+	    pset = 1;
+	    continue;
+	}
+	break;
     }
-    switch(getopt_long(argc, argv, "wc",
-                       long_options, 0)) {
-    case 'w':
-	write_hashes(argc, argv);
-	return 0;
-    case 'c':
-	if (argc == 4) {
-	    compare_hashes(argv[2], argv[3]);
+    /* actually process */
+    switch(mode) {
+    case '?':
+	switch (argc - optind) {
+	case 1:
+	    fin = fopen(argv[optind], "r");
+	    if (!fin) {
+		perror(argv[optind]);
+		exit(1);
+	    }
+	    /* fall through */
+	case 0:
+	    heap_reset(nfeature);
+	    running_crc(fin);
+	    write_hash(stdout);
 	    return 0;
 	}
 	usage();
-    }
-    if (argc == 2) {
-	FILE *f = fopen(argv[1], "r");
-	if (!f) {
-	    perror(argv[1]);
-	    exit(1);
-	}
-	heap_reset(NFEATURES);
-	running_crc(f);
-	fclose(f);
-	write_hash(stdout);
+	abort();
+	/*NOTREACHED*/
+    case 'w':
+	write_hashes(argc - optind, argv + optind);
+	return 0;
+    case 'c':
+	if (pset)
+	    usage();
+	if (optind != argc - 2)
+	    usage();
+	compare_hashes(argv[optind], argv[optind + 1]);
 	return 0;
     }
-    usage();
     abort();
     /*NOTREACHED*/
 }
