@@ -1,0 +1,17 @@
+Revision: simhash--dev--0.1--patch-4
+Archive: tla@po8.org--current
+Creator: Bart Massey <tla@po8.org>
+Date: Thu Mar 17 21:24:04 PST 2005
+Standard-date: 2005-03-18 05:24:04 GMT
+New-files: test/.arch-ids/=id test/.arch-ids/a.c.id
+    test/.arch-ids/b.c.id test/.arch-ids/test.sh.id test/a.c
+    test/b.c test/test.sh
+New-directories: test test/.arch-ids
+Modified-files: heap.c heap.h simhash.c
+New-patches: tla@po8.org--current/simhash--dev--0.1--patch-4
+Summary: minor fixes to scoring, testing added
+Keywords: buggy
+
+Added a test script and some sample data.  Made the heap
+unsigned.  Seems to still be a bug with the heap/generation
+phase: the comparison may be OK now.

@@ -1,0 +1,15 @@
+Revision: simhash--dev--0.1--base-0
+Archive: tla@po8.org--current
+Creator: Bart Massey <tla@po8.org>
+Date: Thu Mar 17 16:58:17 PST 2005
+Standard-date: 2005-03-18 00:58:17 GMT
+Summary: initial import
+New-files: .arch-ids/Makefile.id
+    .arch-ids/RabinHashFunction.java.id
+    .arch-ids/crc32.c.id .arch-ids/posix-crc32.c.id
+    .arch-ids/simhash.c.id Makefile RabinHashFunction.java
+    crc32.c posix-crc32.c simhash.c
+New-patches: tla@po8.org--current/simhash--dev--0.1--base-0
+
+
+(automatically generated log message)

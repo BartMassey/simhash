@@ -1,0 +1,17 @@
+Revision: simhash--dev--0.1--patch-1
+Archive: tla@po8.org--current
+Creator: Bart Massey <tla@po8.org>
+Date: Thu Mar 17 17:13:20 PST 2005
+Standard-date: 2005-03-18 01:13:20 GMT
+New-files: .arch-ids/crc.h.id .arch-ids/heap.c.id
+    .arch-ids/heap.h.id crc.h heap.c heap.h
+Removed-files: .arch-ids/RabinHashFunction.java.id
+    .arch-ids/posix-crc32.c.id RabinHashFunction.java
+    posix-crc32.c
+Modified-files: Makefile crc32.c simhash.c
+New-patches: tla@po8.org--current/simhash--dev--0.1--patch-1
+Summary: split out heap.c
+Keywords: 
+
+Cleaned up the repository a bit, split the heap code into a
+separate file, did the right thing with headers.

@@ -1,0 +1,16 @@
+Revision: simhash--dev--0.1--patch-3
+Archive: tla@po8.org--current
+Creator: Bart Massey <tla@po8.org>
+Date: Thu Mar 17 20:10:49 PST 2005
+Standard-date: 2005-03-18 04:10:49 GMT
+Modified-files: simhash.c
+New-patches: tla@po8.org--current/simhash--dev--0.1--patch-3
+Summary: argument parsing improvements to adjust params
+Keywords: buggy
+
+Argument parsing and program structure changed to allow
+specification of shingle size and feature set size.  Now
+malloc()s the memory used.
+
+Still has fundamental problems with the actual scoring
+metric---need to reread the paper, I guess.

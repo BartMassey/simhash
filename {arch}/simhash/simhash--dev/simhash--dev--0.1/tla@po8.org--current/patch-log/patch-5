@@ -1,0 +1,19 @@
+Revision: simhash--dev--0.1--patch-5
+Archive: tla@po8.org--current
+Creator: Bart Massey <tla@po8.org>
+Date: Thu Mar 17 21:56:12 PST 2005
+Standard-date: 2005-03-18 05:56:12 GMT
+Modified-files: simhash.c
+New-patches: tla@po8.org--current/simhash--dev--0.1--patch-5
+Summary: many fixes, debugging
+Keywords: buggy
+
+fixed the compare score format to %4.2f
+added a debugging trace option and tools
+fixed a hideous bug in that the heap was being abused
+fixed another hideous bug in that the comparison was
+  going from the wrong end
+
+comparing a big hash with a small hash still doesn't
+  score 100%, so something still broke
+
