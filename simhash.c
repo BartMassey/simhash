@@ -26,7 +26,6 @@
  *   http://athos.rutgers.edu/~muthu/broder.ps
  */
 
-
 #include <stdlib.h>
 #include <sys/param.h>
 #include <netinet/in.h>
@@ -35,6 +34,16 @@
 #include <assert.h>
 #include "crc.h"
 #include "heap.h"
+
+#include <unistd.h>
+#define _GNU_SOURCE
+#include <getopt.h>
+
+static struct option long_options[] = {
+    {"write-hashfile", 0, 0, 'w'},
+    {"compare-hashfile", 0, 0, 'c'},
+    {0,0,0,0}
+};
 
 /* HASH FILE VERSION */
 #define FILE_VERSION 0xcb01
@@ -244,13 +253,17 @@ int main(int argc, char **argv) {
 	write_hash(stdout);
 	return 0;
     }
-    if (!strcmp(argv[1], "-w")) {
+    switch(getopt_long(argc, argv, "wc",
+                       long_options, 0)) {
+    case 'w':
 	write_hashes(argc, argv);
 	return 0;
-    }
-    if (!strcmp(argv[1], "-c") && argc == 4) {
-	compare_hashes(argv[2], argv[3]);
-	return 0;
+    case 'c':
+	if (argc == 4) {
+	    compare_hashes(argv[2], argv[3]);
+	    return 0;
+	}
+	usage();
     }
     if (argc == 2) {
 	FILE *f = fopen(argv[1], "r");
