@@ -43,7 +43,7 @@
 /* size of a shingle in bytes.  should be
    at least 4 to make CRC work */
 int nshingle = 8;
-int nfeature = 64;
+int nfeature = 128;
 /* were the defaults changed? */
 int pset = 0;
 /* do a debugging trace? */
@@ -273,9 +273,13 @@ static void compare_hashes(char *name1, char *name2) {
 	fprintf(stderr, "shingle size mismatch\n");
 	exit(1);
     }
+#if 0
+    /* this isn't normally necessary when things are
+       working properly */
     if (hi1->nfeature != hi2->nfeature)
 	fprintf(stderr, "warning: feature set size mismatch %d %d\n",
 		hi1->nfeature, hi2->nfeature);
+#endif
     printf("%4.2f\n", score());
 }
 
