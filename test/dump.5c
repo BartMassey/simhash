@@ -1,0 +1,10 @@
+#!/usr/bin/env nickle
+import File;
+
+while(!end(stdin)) {
+    int ch1 = getbyte();
+    int ch2 = getbyte();
+    int ch3 = getbyte();
+    int ch4 = getbyte();
+    printf("%02x%02x%02x%02x\n", ch1, ch2, ch3, ch4);
+}

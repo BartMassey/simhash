@@ -234,7 +234,7 @@ static double score(void) {
     int i2 = hi2->nfeature - 1;
     int count = 0;
     int matchcount = 0;
-    while(i1 > 0 && i2 > 0) {
+    while(i1 >= 0 && i2 >= 0) {
 	if ((unsigned)(hi1->feature[i1]) < (unsigned)(hi2->feature[i2])) {
 	    --i1;
 	    continue;
