@@ -1,4 +1,7 @@
 #!/bin/sh
+# Copyright (c) 2005-2007 Bart Massey
+# ALL RIGHTS RESERVED
+# Please see the file COPYING in this directory for license information.
 
 # create filese named a and b that you want to compare, then
 # use this script to try various hash sizes
