@@ -1,0 +1,137 @@
+.TH SIMHASH 1  "3 January 2007"
+.\" Copyright (c) 2005-2007 Bart Massey
+.\" All Rights Reserved
+.\" Please see the end of this file for license information.
+.SH NAME
+simhash \- file similarity hash tool
+.SH SYNOPSIS
+simhash
+.BI "[ -s " nshingles " ]"
+.BI "[ -f " nfeatures " ]"
+.BI "[ " file " ]"
+.br
+simhash
+.BI "[ -s " nshingles " ]"
+.BI "[ -f " nfeatures " ]"
+.BI "-w [ " file " ]" " ..."
+.br
+simhash
+.BI "-c " "hashfile hashfile"
+.SH DESCRIPTION
+.LP
+This program is used to compute and compare similarity
+hashes of files.  A similarity hash is a chunk of data that
+has the property that some distance metric between files is
+proportional to some distance metric between the hashes.
+Typically the similarity hash will be much smaller than the
+file itself.
+.P
+The algorithm used by
+.I simhash
+is Manassas' "shingleprinting" algorithm (see BIBLIOGRAPHY below): take a hash of every \fIm\fP-byte
+subsequence of the file, and retain the \fIn\fP of these
+hashes that are numerically smallest.  The size of the
+intersection of the hash sets of two files gives a
+statistically good estimate of the similarity of the files
+as a whole.
+.P
+In its default mode,
+.I simhash
+will compute the similarity hash of its file argument (or
+stdin) and write this hash to its standard output.
+When invoked with the
+.B -w
+argument (see below),
+.I simhash
+will compute similarity hashes of all of its file
+arguments in "batch mode".  Finally, when invoked with the
+.B -c
+argument (see below),
+.I simhash
+will report the degree of similarity between two hashes.
+.SH OPTIONS
+.TP
+.BI "-c " "hashfile1 hashfile2"
+Display the distance (normalized to the range 0..1) between
+the similarity hash stored in
+.I hashfile1
+and the similarity hash stored in
+.IR hashfile2 .
+.TP
+.BI "-f " "feature-count"
+When computing a similarity hash,
+retain
+.I "feature-count"
+significant hashes from the target file.
+The default is 128 features.  Larger feature counts will
+give higher resolution in differences between files, will
+increase the size of the similarity hash proportionally to
+the feature count,
+and will increase similarity hash computation time slightly.
+.TP
+.BI "-s " "shingle-size"
+When computing a similarity hash,
+use hashes of samples consisting of
+.I "shingle-size"
+consecutive bytes drawn from the target file.
+The default is 8 bytes, the minimum is 4 bytes.
+Larger shingle sizes will emphasize the differences between
+files more and will slow the similarity hash computation
+proportionally to the shingle size.
+.TP
+.BI "-w [ " file " ]" " ..."
+Write the similarity hash of each of the
+.I file
+arguments to
+.IR "file.sim" .
+.SH AUTHOR
+Bart Massey <bart@cs.pdx.edu>
+.SH BUGS
+This currently uses CRC32 for the hashing.  A Rabin
+Fingerprint should be offered as
+a slightly slower but more reliable alternative.
+.P
+The shingleprinting algorithm works for text files and
+fairly well for other sequential filetypes, but does not work well for image
+files.   The latter both are 2D and often undergo odd transformations.
+.SH BIBLIOGRAPHY
+.LP
+Mark Manasse, Microsoft Research Silicon Valley.
+Finding similar things quickly in large collections.
+http://research.microsoft.com/research/sv/PageTurner/similarity.htm
+.LP
+Andrei Z. Broder.
+On the resemblance and containment of documents.
+In Compression and Complexity of Sequences (SEQUENCES'97),
+pages 21-29. IEEE Computer Society, 1998.
+ftp://ftp.digital.com/pub/DEC/SRC/publications/broder/positano-final-wpnums.pdf
+.LP
+Andrei Z. Broder.
+Some applications of Rabin's fingerprinting method.
+Published in R. Capocelli, A. De Santis, U. Vaccaro eds.,
+Sequences II: Methods in Communications, Security, and
+Computer Science, Springer-Verlag, 1993.
+http://athos.rutgers.edu/~muthu/broder.ps
+
+
+.\" Permission is hereby granted, free of charge, to any person
+.\" obtaining a copy of this software and associated
+.\" documentation files (the "Software"), to deal in the
+.\" Software without restriction, including without limitation
+.\" the rights to use, copy, modify, merge, publish, distribute,
+.\" sublicense, and/or sell copies of the Software, and to
+.\" permit persons to whom the Software is furnished to do so,
+.\" subject to the following conditions:
+.\" 
+.\" The above copyright notice and this permission notice shall
+.\" be included in all copies or substantial portions of the
+.\" Software.
+.\" 
+.\" THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY
+.\" KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
+.\" WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR
+.\" PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS
+.\" OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR
+.\" OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
+.\" OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+.\" SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
