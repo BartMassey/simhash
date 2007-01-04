@@ -1,7 +1,6 @@
-/* generate and compare simple shingleprints
+/*
+ * Generate and compare simple shingleprints
  * Bart Massey 2005/03
- * Copyright (c) 2005 Bart Massey.
- * ALL RIGHTS RESERVED.
  */
 
 /* Bibliography

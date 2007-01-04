@@ -1,7 +1,6 @@
-/* simple hash table stop list ala corman-leiserson-rivest.
+/*
+ * simple hash table stop list ala corman-leiserson-rivest.
  * Bart Massey 2005/03
- * Copyright (c) 2005 Bart Massey.
- * ALL RIGHTS RESERVED.
  */
 
 #include <assert.h>

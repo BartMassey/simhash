@@ -1,7 +1,6 @@
-/* heap max int priority queue.
+/*
+ * heap max int priority queue
  * Bart Massey 2005/03
- * Copyright (c) 2005 Bart Massey.
- * ALL RIGHTS RESERVED.
  */
 #include <assert.h>
 #include <stdlib.h>
