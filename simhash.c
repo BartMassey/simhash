@@ -39,6 +39,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <assert.h>
+#include <math.h>
 #include "crc.h"
 #include "heap.h"
 #include "hash.h"
@@ -182,17 +183,13 @@ static void write_hash(hashinfo *hi, FILE *f) {
     short s = htons(FILE_VERSION);  /* file/CRC version */
     int i;
     fwrite(&s, sizeof(short), 1, f);
-    s = htons(hi->nfeature);
+    s = htons(hi->nshingle);
     fwrite(&s, sizeof(short), 1, f);
     for(i = 0; i < hi->nfeature; i++) {
 	unsigned hv = htonl(hi->feature[i]);
 	fwrite(&hv, sizeof(unsigned), 1, f);
     }
 }
-
-static void match_hashes(int argc, char **argv) {
-}
-
 
 static void write_hashes(int argc, char **argv) {
     int i;
@@ -255,6 +252,7 @@ static hashinfo *read_hash(FILE *f) {
 	}
 	h->feature[i++] = ntohl(fe);
     }
+    h->nfeature = i;
     abort();
     /*NOTREACHED*/
 }
@@ -307,6 +305,14 @@ static double score(hashinfo *hi1, hashinfo *hi2) {
     return intersectsize / unionsize;
 }
 
+void print_score(double s) {
+    if (s == 1.0) {
+	printf("1.0");
+	return;
+    }
+    printf(".%02d", (int)floor(s * 100));
+}
+
 static void compare_hashes(char *name1, char *name2) {
     hashinfo *hi1, *hi2;
     hi1 = read_hashfile(name1);
@@ -326,9 +332,43 @@ static void compare_hashes(char *name1, char *name2) {
 	fprintf(stderr, "warning: feature set size mismatch %d %d\n",
 		hi1->nfeature, hi2->nfeature);
 #endif
-    printf("%4.2f\n", score(hi1, hi2));
+    print_score(score(hi1, hi2));
+    printf("\n");
     free_hashinfo(hi1);
     free_hashinfo(hi2);
+}
+
+
+static void match_hashes(int argc, char **argv) {
+    hashinfo **his = malloc(argc * sizeof *his);
+    double **scores = malloc(argc * sizeof *scores);
+    int nfilename = 0;
+    int i, j;
+    assert(his);
+    assert(scores);
+    for (i = 0; i < argc; i++)
+	his[i] = hash_filename(argv[i]);
+    for (i = 0; i < argc; i++) {
+	scores[i] = malloc(argc * sizeof **scores);
+	assert(scores[i]);
+	for (j = 0; j < i; j++)
+	    scores[i][j] = score(his[i], his[j]);
+    }
+    for (i = 0; i < argc; i++) {
+	int n = strlen(argv[i]);
+	if (n > nfilename)
+	    nfilename = n;
+    }
+    for (i = 0; i < argc; i++) {
+	printf("%s", argv[i]);
+	for (j = strlen(argv[i]); j <= nfilename; j++)
+	    printf(" ");
+	for (j = 0; j < i; j++) {
+	    print_score(scores[i][j]);
+	    printf(" ");
+	}
+	printf("\n");
+    }
 }
 
 
@@ -345,7 +385,7 @@ int main(int argc, char **argv) {
     FILE *fin = stdin;
     /* parse initial arguments */
     while(1) {
-	switch(getopt_long(argc, argv, "wcs:f:d",
+	switch(getopt_long(argc, argv, "wm:cs:f:d",
 			   long_options, 0)) {
 	case 'w':
 	    mode = 'w';

@@ -9,7 +9,7 @@ CFLAGS=-g -O4 -Wall -ansi -pedantic
 OBJS=simhash.o crc32.o heap.o hash.o
 
 simhash: $(OBJS)
-	$(CC) $(CFLAGS) -o simhash $(OBJS)
+	$(CC) $(CFLAGS) -o simhash $(OBJS) -lm
 
 clean:
 	-rm -f $(OBJS) simhash

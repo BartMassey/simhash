@@ -14,7 +14,15 @@ for j in $SIZES; do
 done
 for i in $SIZES; do
   for j in $SIZES; do
-    echo -n `./simhash -c a-$i.sim b-$j.sim 2>/dev/null` ' '
+    HASHVAL=`./simhash -c a-$i.sim b-$j.sim 2>/dev/null`
+    if [ $? -ne 0 ]
+    then
+      echo ""
+      echo -n "./simhash -c a-$i.sim b-$j.sim: "
+      ./simhash -c a-$i.sim b-$j.sim
+      exit $?
+    fi
+    echo -n $HASHVAL ""
   done
   echo ''
 done
