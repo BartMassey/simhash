@@ -18,6 +18,11 @@ simhash
 .BI "-w [ " file " ]" " ..."
 .br
 simhash
+.BI "[ -s " nshingles " ]"
+.BI "[ -f " nfeatures " ]"
+.BI "-m " threshold " [" file " ]" " ..."
+.br
+simhash
 .BI "-c " "hashfile hashfile"
 .SH DESCRIPTION
 .LP
@@ -46,7 +51,12 @@ When invoked with the
 argument (see below),
 .I simhash
 will compute similarity hashes of all of its file
-arguments in "batch mode".  Finally, when invoked with the
+arguments in "batch mode".
+When invoked with the
+.B -m
+argument (see below),
+.I simhash will compare all the given files using similarity hashes in "match mode".
+Finally, when invoked with the
 .B -c
 argument (see below),
 .I simhash
@@ -86,6 +96,13 @@ Write the similarity hash of each of the
 .I file
 arguments to
 .IR "file.sim" .
+.BI "-m " threshold " [ " file " ]" " ..."
+Compute the similarity hash of each of the
+.I file
+arguments, and output a similarity matrix
+for those files whose similarity with
+at least one other file is above
+.IR threshold .
 .SH AUTHOR
 Bart Massey <bart@cs.pdx.edu>
 .SH BUGS
