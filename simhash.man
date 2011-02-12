@@ -15,12 +15,12 @@ simhash
 simhash
 .BI "[ -s " nshingles " ]"
 .BI "[ -f " nfeatures " ]"
-.BI "-w [ " file " ]" " ..."
+.BI "-w " file " ..."
 .br
 simhash
 .BI "[ -s " nshingles " ]"
 .BI "[ -f " nfeatures " ]"
-.BI "-m " threshold " [" file " ]" " ..."
+.BI "-m " file " ..."
 .br
 simhash
 .BI "-c " "hashfile hashfile"
@@ -55,7 +55,8 @@ arguments in "batch mode".
 When invoked with the
 .B -m
 argument (see below),
-.I simhash will compare all the given files using similarity hashes in "match mode".
+.I simhash
+will compare all the given files using similarity hashes in "match mode".
 Finally, when invoked with the
 .B -c
 argument (see below),
@@ -63,16 +64,9 @@ argument (see below),
 will report the degree of similarity between two hashes.
 .SH OPTIONS
 .TP
-.BI "-c " "hashfile1 hashfile2"
-Display the distance (normalized to the range 0..1) between
-the similarity hash stored in
-.I hashfile1
-and the similarity hash stored in
-.IR hashfile2 .
-.TP
 .BI "-f " "feature-count"
 When computing a similarity hash,
-retain
+retain at most
 .I "feature-count"
 significant hashes from the target file.
 The default is 128 features.  Larger feature counts will
@@ -91,18 +85,24 @@ Larger shingle sizes will emphasize the differences between
 files more and will slow the similarity hash computation
 proportionally to the shingle size.
 .TP
-.BI "-w [ " file " ]" " ..."
+.BI "-c " "hashfile1 hashfile2"
+Display the distance (normalized to the range 0..1) between
+the similarity hash stored in
+.I hashfile1
+and the similarity hash stored in
+.IR hashfile2 .
+.TP
+.BI "-w " file " ..."
 Write the similarity hash of each of the
 .I file
 arguments to
 .IR "file.sim" .
-.BI "-m " threshold " [ " file " ]" " ..."
+.TP
+.BI "-m " file " ..."
 Compute the similarity hash of each of the
 .I file
 arguments, and output a similarity matrix
-for those files whose similarity with
-at least one other file is above
-.IR threshold .
+for those files.
 .SH AUTHOR
 Bart Massey <bart@cs.pdx.edu>
 .SH BUGS

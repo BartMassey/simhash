@@ -56,11 +56,10 @@ int nfeature = 128;
 int pset = 0;
 /* do a debugging trace? */
 int debug_trace = 0;
-double threshold = 0;
 
 static struct option long_options[] = {
     {"write-hashfile", 0, 0, 'w'},
-    {"match-files", 1, 0, 'm'},
+    {"match-files", 0, 0, 'm'},
     {"compare-hashfile", 0, 0, 'c'},
     {"shingle-size", 1, 0, 's'},
     {"feature-set-size", 1, 0, 'f'},
@@ -344,6 +343,7 @@ static void match_hashes(int argc, char **argv) {
     double **scores = malloc(argc * sizeof *scores);
     int nfilename = 0;
     int i, j;
+    int fieldwidth;
     assert(his);
     assert(scores);
     for (i = 0; i < argc; i++)
@@ -359,13 +359,27 @@ static void match_hashes(int argc, char **argv) {
 	if (n > nfilename)
 	    nfilename = n;
     }
+    fieldwidth = 1;
+    if (argc > 9)
+	fieldwidth = 2;
+    if (argc > 99)
+	fieldwidth = 3;
+    for (i = 0; i <= nfilename + fieldwidth + 1; i++)
+	printf(" ");
+    for (i = 0; i < argc - 1; i++) {
+	for (j = 0; j < 3 - fieldwidth; j++)
+	    printf(" ");
+	printf("%d ", i + 1);
+    }
+    printf("\n");
     for (i = 0; i < argc; i++) {
 	printf("%s", argv[i]);
-	for (j = strlen(argv[i]); j <= nfilename; j++)
+	for (j = strlen(argv[i]); j <= nfilename + fieldwidth; j++)
 	    printf(" ");
+	printf("%d", i + 1);
 	for (j = 0; j < i; j++) {
-	    print_score(scores[i][j]);
 	    printf(" ");
+	    print_score(scores[i][j]);
 	}
 	printf("\n");
     }
@@ -375,7 +389,7 @@ static void match_hashes(int argc, char **argv) {
 static void usage(void) {
     fprintf(stderr, "simhash: usage:\n"
 	    "\tsimhash [-s nshingles] [-f nfeatures] [file]\n"
-	    "\tsimhash [-s nshingles] [-f nfeatures] [-w|-m threshold] [file] ...\n"
+	    "\tsimhash [-s nshingles] [-f nfeatures] [-w|-m] file ...\n"
 	    "\tsimhash -c hashfile hashfile\n");
     exit(1);
 }
@@ -385,18 +399,13 @@ int main(int argc, char **argv) {
     FILE *fin = stdin;
     /* parse initial arguments */
     while(1) {
-	switch(getopt_long(argc, argv, "wm:cs:f:d",
+	switch(getopt_long(argc, argv, "wmcs:f:d",
 			   long_options, 0)) {
 	case 'w':
 	    mode = 'w';
 	    continue;
 	case 'm':
 	    mode = 'm';
-	    threshold = atof(optarg);
-	    if (threshold < 0 || threshold > 1) {
-		fprintf(stderr, "simhash: threshold must be in 0..1\n");
-		exit(1);
-	    }
 	    continue;
 	case 'c':
 	    mode = 'c';

@@ -2,7 +2,9 @@
 # ALL RIGHTS RESERVED
 # Please see the file COPYING in this directory for license information.
 
-BIN=/home/bart/bin/i686
+DESTDIR=/usr/local
+BIN=$(DESTDIR)/bin
+MAN=$(DESTDIR)/man
 
 CC=gcc
 CFLAGS=-g -O4 -Wall -ansi -pedantic
@@ -14,8 +16,9 @@ simhash: $(OBJS)
 clean:
 	-rm -f $(OBJS) simhash
 
-install: simhash
+install: simhash simhash.man
 	cp simhash $(BIN)
+	cp simhash.man $(MAN)/man1/simhash.1
 
 heap.o: heap.h
 
