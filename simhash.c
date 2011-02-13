@@ -306,15 +306,18 @@ static double score(hashinfo *hi1, hashinfo *hi2) {
     return intersectsize / unionsize;
 }
 
-void print_score(double s) {
+void print_score(int fieldwidth, double s) {
+    int lead = fieldwidth - 3;
+    int i;
+    for (i = 0; i < lead; i++)
+	printf(" ");
     if (s == -1) {
 	printf(" ? ");
-	return;
     } else if (s == 1.0) {
 	printf("1.0");
-	return;
+    } else {
+	printf(".%02d", (int)floor(s * 100));
     }
-    printf(".%02d", (int)floor(s * 100));
 }
 
 static void compare_hashes(char *name1, char *name2) {
@@ -336,12 +339,31 @@ static void compare_hashes(char *name1, char *name2) {
 	fprintf(stderr, "warning: feature set size mismatch %d %d\n",
 		hi1->nfeature, hi2->nfeature);
 #endif
-    print_score(score(hi1, hi2));
+    print_score(0, score(hi1, hi2));
     printf("\n");
     free_hashinfo(hi1);
     free_hashinfo(hi2);
 }
 
+
+static int width(int n) {
+    int i = 0;
+    int k = 1;
+    while (k <= n) {
+	k *= 10;
+	i++;
+    }
+    return i;
+}
+
+static void print_index(int fieldwidth, int value) {
+    int n = width(value);
+    int lead = fieldwidth - n;
+    int i;
+    for (i = 0; i < lead; i++)
+	printf(" ");
+    printf("%d", value);
+}
 
 static void match_hashes(int argc, char **argv) {
     hashinfo **his = malloc(argc * sizeof *his);
@@ -349,10 +371,14 @@ static void match_hashes(int argc, char **argv) {
     int nfilename = 0;
     int i, j;
     int fieldwidth;
+    if (argc <= 0)
+	return;
     assert(his);
     assert(scores);
+    /* compute filename hashes */
     for (i = 0; i < argc; i++)
 	his[i] = hash_filename(argv[i]);
+    /* build score matrix */
     for (i = 0; i < argc; i++) {
 	scores[i] = malloc(argc * sizeof **scores);
 	assert(scores[i]);
@@ -362,33 +388,39 @@ static void match_hashes(int argc, char **argv) {
 	    else
 		scores[i][j] = -1;
     }
+    /* find maximum filename length */
     for (i = 0; i < argc; i++) {
 	int n = strlen(argv[i]);
 	if (n > nfilename)
 	    nfilename = n;
     }
-    fieldwidth = 1;
-    if (argc > 9)
-	fieldwidth = 2;
-    if (argc > 99)
+    /* find the field width */
+    fieldwidth = width(argc);
+    if (fieldwidth < 3)
 	fieldwidth = 3;
-    for (i = 0; i <= nfilename + fieldwidth + 1; i++)
+    /* print the first row of indices */
+    for (i = 0; i <= nfilename + fieldwidth; i++)
 	printf(" ");
-    for (i = 0; i < argc - 1; i++) {
-	for (j = 0; j < 3 - fieldwidth; j++)
-	    printf(" ");
-	printf("%d ", i + 1);
+    for (i = 1; i < argc - 1; i++) {
+	print_index(fieldwidth, i);
+	printf(" ");
     }
+    print_index(fieldwidth, argc - 1);
     printf("\n");
+    /* print the rows of the matrix */
     for (i = 0; i < argc; i++) {
 	printf("%s", argv[i]);
-	for (j = strlen(argv[i]); j <= nfilename + fieldwidth; j++)
+	for (j = strlen(argv[i]); j <= nfilename; j++)
 	    printf(" ");
-	printf("%d", i + 1);
-	for (j = 0; j < i; j++) {
+	print_index(fieldwidth, i + 1);
+	if (i > 0)
 	    printf(" ");
-	    print_score(scores[i][j]);
+	for (j = 0; j < i - 1; j++) {
+	    print_score(fieldwidth, scores[i][j]);
+	    printf(" ");
 	}
+	if (i > 0)
+	    print_score(fieldwidth, scores[i][i - 1]);
 	printf("\n");
     }
 }
