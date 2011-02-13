@@ -110,7 +110,7 @@ static int running_crc(FILE *f) {
     for (i = 0; i < nshingle; i++) {
 	int ch = fgetc(f);
 	if (ch == EOF) {
-	    free(buf);
+	    fclose(f);
 	    return 0;
 	}
 	buf[i] = ch;
@@ -120,8 +120,10 @@ static int running_crc(FILE *f) {
 	int ch;
 	crc_insert((unsigned)hash_crc32(buf, i, nshingle));
 	ch = fgetc(f);
-	if (ch == EOF)
+	if (ch == EOF) {
+	    fclose(f);
 	    return 1;
+	}
 	buf[i] = ch;
 	i = (i + 1) % nshingle;
     }
@@ -157,10 +159,8 @@ static hashinfo * get_hashinfo() {
 static hashinfo * hash_file(FILE *f) {
     heap_reset(nfeature);
     hash_reset(nfeature);
-    if (!running_crc(f)) {
-	fclose(f);
+    if (!running_crc(f))
 	return 0;
-    }
     return get_hashinfo();
 }
 
@@ -173,7 +173,6 @@ static hashinfo * hash_filename(char *filename) {
 	exit(1);
     }
     hi = hash_file(f);
-    fclose(f);
     return hi;
 }
 
@@ -196,6 +195,10 @@ static void write_hashes(int argc, char **argv) {
     for(i = 0; i < argc; i++) {
 	hashinfo *hi = hash_filename(argv[i]);
 	FILE *of;
+	if (hi == 0) {
+	    fprintf(stderr, "%s: warning: not hashed\n", argv[i]);
+	    continue;
+	}
 	strncpy(nambuf, argv[i],
 		MAXPATHLEN - sizeof(SUFFIX));
 	nambuf[MAXPATHLEN - sizeof(SUFFIX)] = '\0';
@@ -265,7 +268,6 @@ static hashinfo *read_hashfile(char *name) {
 	exit(1);
     }
     hi = read_hash(f);
-    fclose(f);
     return hi;
 }
 
@@ -305,7 +307,10 @@ static double score(hashinfo *hi1, hashinfo *hi2) {
 }
 
 void print_score(double s) {
-    if (s == 1.0) {
+    if (s == -1) {
+	printf(" ? ");
+	return;
+    } else if (s == 1.0) {
 	printf("1.0");
 	return;
     }
@@ -352,7 +357,10 @@ static void match_hashes(int argc, char **argv) {
 	scores[i] = malloc(argc * sizeof **scores);
 	assert(scores[i]);
 	for (j = 0; j < i; j++)
-	    scores[i][j] = score(his[i], his[j]);
+	    if (his[i] && his[j])
+		scores[i][j] = score(his[i], his[j]);
+	    else
+		scores[i][j] = -1;
     }
     for (i = 0; i < argc; i++) {
 	int n = strlen(argv[i]);
@@ -438,11 +446,19 @@ int main(int argc, char **argv) {
 	    hashinfo *hi;
 	case 1:
 	    hi = hash_filename(argv[optind]);
+	    if (!hi) {
+		fprintf(stderr, "%s: not hashable\n", argv[optind]);
+		return -1;
+	    }
 	    write_hash(hi, stdout);
 	    free_hashinfo(hi);
 	    return 0;
 	case 0:
 	    hi = hash_file(fin);
+	    if (!hi) {
+		fprintf(stderr, "stdin not hashable\n");
+		return -1;
+	    }
 	    write_hash(hi, stdout);
 	    free_hashinfo(hi);
 	    return 0;
