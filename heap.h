@@ -4,8 +4,8 @@
  * Please see the file COPYING in this directory for license information.
  */
 
-extern unsigned *heap;
+extern uint32_t *heap;
 extern int nheap;
 extern void heap_reset(int);
-extern unsigned heap_extract_max(void);
-extern void heap_insert(unsigned);
+extern uint32_t heap_extract_max(void);
+extern void heap_insert(uint32_t);

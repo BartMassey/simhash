@@ -2,6 +2,7 @@
  *  Copyright (C) 1986 Gary S. Brown.  You may use this program, or
  *  code or tables extracted from it, as desired without restriction.
  */
+#include <stdint.h>
 #include "crc.h"
  
 /*
@@ -89,9 +90,9 @@ static unsigned crc32_tab[] = {
 	0xb40bbe37, 0xc30c8ea1, 0x5a05df1b, 0x2d02ef8d
 };
 
-int hash_crc32(char *buf, int i0, int nbuf) {
+uint32_t hash_crc32(unsigned char *buf, int i0, int nbuf) {
     int i = i0;
-    int crc = ~0U;
+    uint32_t crc = ~0U;
     do {
 	    crc = crc32_tab[(crc ^ buf[i]) & 0xFF] ^ (crc >> 8);
 	    i = (i + 1) % nbuf;

@@ -40,6 +40,7 @@
 #include <stdio.h>
 #include <assert.h>
 #include <math.h>
+#include <stdint.h>
 #include "crc.h"
 #include "heap.h"
 #include "hash.h"
@@ -76,7 +77,7 @@ static struct option long_options[] = {
 /* if crc is less than top of heap, extract
    top-of-heap, then insert crc.  don't worry
    about sign bits---doesn't matter here. */
-static void crc_insert(unsigned crc) {
+static void crc_insert(uint32_t crc) {
     if (debug_trace)
 	fprintf(stderr, ">got %x\n", crc);
     if(nheap == nfeature && crc >= heap[0])
@@ -87,7 +88,7 @@ static void crc_insert(unsigned crc) {
 	return;
     }
     if(nheap == nfeature) {
-	unsigned m = heap_extract_max();
+	uint32_t m = heap_extract_max();
 	assert(hash_delete(m));
 	if (debug_trace)
 	    fprintf(stderr, ">pop %x\n", m);
@@ -118,7 +119,7 @@ static int running_crc(FILE *f) {
     i = 0;
     while(1) {
 	int ch;
-	crc_insert((unsigned)hash_crc32(buf, i, nshingle));
+	crc_insert(hash_crc32(buf, i, nshingle));
 	ch = fgetc(f);
 	if (ch == EOF) {
 	    fclose(f);
@@ -132,9 +133,9 @@ static int running_crc(FILE *f) {
 }
 
 typedef struct hashinfo {
-    unsigned short nshingle;
-    unsigned int nfeature;
-    unsigned *feature;
+    uint16_t nshingle;
+    uint16_t nfeature;
+    uint32_t *feature;
 } hashinfo;
 
 static void free_hashinfo(hashinfo *hi) {
@@ -144,7 +145,7 @@ static void free_hashinfo(hashinfo *hi) {
 
 static hashinfo * get_hashinfo() {
     hashinfo *hi = malloc(sizeof *hi);
-    unsigned *crcs = malloc(nheap * sizeof crcs[0]);
+    uint32_t *crcs = malloc(nheap * sizeof crcs[0]);
     int i = 0;
     assert(hi);
     assert(crcs);
@@ -178,14 +179,14 @@ static hashinfo * hash_filename(char *filename) {
 
 
 static void write_hash(hashinfo *hi, FILE *f) {
-    short s = htons(FILE_VERSION);  /* file/CRC version */
+    uint16_t s = htons(FILE_VERSION);  /* file/CRC version */
     int i;
-    fwrite(&s, sizeof(short), 1, f);
+    fwrite(&s, sizeof(uint16_t), 1, f);
     s = htons(hi->nshingle);
-    fwrite(&s, sizeof(short), 1, f);
+    fwrite(&s, sizeof(uint16_t), 1, f);
     for(i = 0; i < hi->nfeature; i++) {
-	unsigned hv = htonl(hi->feature[i]);
-	fwrite(&hv, sizeof(unsigned), 1, f);
+	uint32_t hv = htonl(hi->feature[i]);
+	fwrite(&hv, sizeof(uint32_t), 1, f);
     }
 }
 
@@ -218,17 +219,17 @@ static void write_hashes(int argc, char **argv) {
    pointer to info.  A null pointer is returned on error. */
 static hashinfo *read_hash(FILE *f) {
     hashinfo *h = malloc(sizeof(hashinfo));
-    short s;
+    uint16_t s;
     int i;
-    unsigned short version;
+    uint16_t version;
     assert(h);
-    fread(&s, sizeof(short), 1, f);
+    fread(&s, sizeof(uint16_t), 1, f);
     version = ntohs(s);
     if (version != FILE_VERSION) {
 	fprintf(stderr, "bad file version\n");
 	return 0;
     }
-    fread(&s, sizeof(short), 1, f);
+    fread(&s, sizeof(uint16_t), 1, f);
     h->nshingle = ntohs(s);
     h->nfeature = 16;
     h->feature = malloc(h->nfeature * sizeof(int));
@@ -286,11 +287,11 @@ static double score(hashinfo *hi1, hashinfo *hi2) {
     int count = 0;
     int matchcount = 0;
     while(i1 >= 0 && i2 >= 0) {
-	if ((unsigned)(hi1->feature[i1]) < (unsigned)(hi2->feature[i2])) {
+	if (hi1->feature[i1] < hi2->feature[i2]) {
 	    --i1;
 	    continue;
 	}
-	if((unsigned)(hi1->feature[i1]) > (unsigned)(hi2->feature[i2])) {
+	if(hi1->feature[i1] > hi2->feature[i2]) {
 	    --i2;
 	    continue;
 	}

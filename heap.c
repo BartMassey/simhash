@@ -13,9 +13,10 @@
 
 #include <assert.h>
 #include <stdlib.h>
+#include <stdint.h>
 #include "heap.h"
 
-unsigned *heap = 0;
+uint32_t *heap = 0;
 int nheap = 0;
 static int maxheap = 0;
 
@@ -63,8 +64,8 @@ static void downheap(void) {
     }
 }
 
-unsigned heap_extract_max(void) {
-    unsigned m;
+uint32_t heap_extract_max(void) {
+    uint32_t m;
     assert(nheap > 0);
     /* lift the last heap element to the top,
        replacing the current top element */
@@ -93,7 +94,7 @@ static void upheap(void) {
     }
 }
 
-void heap_insert(unsigned v) {
+void heap_insert(uint32_t v) {
     assert(nheap < maxheap);
     heap[nheap++] = v;
     upheap();

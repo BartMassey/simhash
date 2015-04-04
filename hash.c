@@ -14,6 +14,7 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <stdint.h>
 #include "hash.h"
 
 /* occupancy is out-of-band.  sigh */
@@ -58,9 +59,9 @@ void hash_reset(int size) {
    try to hash them at all!  they're plenty random
    coming in, in principle. */
 
-static int do_hash_insert(unsigned crc) {
+static int do_hash_insert(uint32_t crc) {
     int count;
-    unsigned h = crc;
+    uint32_t h = crc;
     for (count = 0; count < nhash; count++) {
 	int i = h & (nhash - 1);
 	if (occ[i] != FULL) {
@@ -93,7 +94,7 @@ static void gc(void) {
     free(oldocc);
 }
 
-void hash_insert(unsigned crc) {
+void hash_insert(uint32_t crc) {
     if (do_hash_insert(crc))
 	return;
     gc();
@@ -104,9 +105,9 @@ void hash_insert(unsigned crc) {
     /*NOTREACHED*/
 }
 
-static int do_hash_contains(unsigned crc) {
+static int do_hash_contains(uint32_t crc) {
     int count;
-    unsigned h = crc;
+    uint32_t h = crc;
     for (count = 0; count < nhash; count++) {
 	int i = h & (nhash - 1);
 	if (occ[i] == EMPTY)
@@ -118,7 +119,7 @@ static int do_hash_contains(unsigned crc) {
     return -1;
 }
 
-int hash_contains(unsigned crc) {
+int hash_contains(uint32_t crc) {
     int result = do_hash_contains(crc);
     if (result >= 0)
 	return result;
@@ -131,9 +132,9 @@ int hash_contains(unsigned crc) {
     /*NOTREACHED*/
 }
 
-static int do_hash_delete(unsigned crc) {
+static int do_hash_delete(uint32_t crc) {
     int count;
-    unsigned h = crc;
+    uint32_t h = crc;
     for (count = 0; count < nhash; count++) {
 	int i = h & (nhash - 1);
 	if (occ[i] == FULL && hash[i] == crc) {
@@ -147,7 +148,7 @@ static int do_hash_delete(unsigned crc) {
     return -1;
 }
 
-int hash_delete(unsigned crc) {
+int hash_delete(uint32_t crc) {
     int result = do_hash_delete(crc);
     if (result >= 0)
 	return result;
