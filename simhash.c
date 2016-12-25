@@ -103,9 +103,9 @@ static void crc_insert(uint32_t crc) {
    for at least a single shingle. */
 static int running_crc(FILE *f) {
     int i;
-    static char *buf = 0;
+    static unsigned char *buf = 0;
     if (buf == 0) {
-	buf = malloc(nshingle);
+	buf = (unsigned char *) malloc(nshingle);
 	assert(buf);
     }
     for (i = 0; i < nshingle; i++) {
@@ -114,7 +114,7 @@ static int running_crc(FILE *f) {
 	    fclose(f);
 	    return 0;
 	}
-	buf[i] = ch;
+	buf[i] = (unsigned char) ch;
     }
     i = 0;
     while(1) {
@@ -125,7 +125,7 @@ static int running_crc(FILE *f) {
 	    fclose(f);
 	    return 1;
 	}
-	buf[i] = ch;
+	buf[i] = (unsigned char) ch;
 	i = (i + 1) % nshingle;
     }
     assert(0);
